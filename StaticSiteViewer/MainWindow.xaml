@@ -7,6 +7,6 @@
         xmlns:local="clr-namespace:StaticSiteViewer"
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800">
-    <wv2:WebView2 Source="https://localhost/index.html"
+    <wv2:WebView2 Source="{x:Static local:MainWindow.RootUrl}"
                   CoreWebView2InitializationCompleted="WebView2_CoreWebView2InitializationCompleted"/>
 </Window>
