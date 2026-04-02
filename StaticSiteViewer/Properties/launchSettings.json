@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "_LearnHttp": {
+      "commandName": "Project",
+      "commandLineArgs": "dist"
+    }
+  }
+}

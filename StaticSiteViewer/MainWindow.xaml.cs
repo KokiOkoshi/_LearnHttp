@@ -27,7 +27,7 @@ namespace StaticSiteViewer
         }
 
         static FileExtensionContentTypeProvider FileExtensionContentTypeProvider { get; } = new();
-        static string RootFolder { get; } = @"dist";
+        static string RootFolder { get; } = Environment.GetCommandLineArgs().Skip(1).FirstOrDefault() ?? string.Empty;
         static string HostName { get; } = @"appassets.localhost";
         public static Uri RootUrl { get; } = new Uri($@"https://{HostName}/");
 
@@ -44,44 +44,44 @@ namespace StaticSiteViewer
         }
 
         static void HandleWebResourceRequested(object? sender, CoreWebView2WebResourceRequestedEventArgs args)
-            {
+        {
             if (sender is not CoreWebView2 coreWebView2) return;
 
-                var uri = new Uri(args.Request.Uri);
+            var uri = new Uri(args.Request.Uri);
             if (uri.Host != HostName) return;
 
-                var resourcePath = System.IO.Path.Combine(
-                    RootFolder,
-                    (uri.AbsolutePath switch
-                    {
-                        // NOTE: ファイル名省略された場合は index.html
-                        [.., '/'] x => System.IO.Path.Join(x, "index.html"),
-                        var x => x,
-                    }).TrimStart('/'));
-
-                switch (resourcePath)
+            var resourcePath = System.IO.Path.Combine(
+                RootFolder,
+                (uri.AbsolutePath switch
                 {
-                    // リソースが存在する場合 : ステータスコード200
-                    case var existingResource when File.Exists(existingResource):
-                        var mimeType = FileExtensionContentTypeProvider.TryGetContentType(resourcePath, out var result) ? result : null;
-                    args.Response = coreWebView2.Environment.CreateWebResourceResponse(
-                            Content: File.OpenRead(resourcePath),
-                            StatusCode: StatusCodes.Status200OK,
-                            ReasonPhrase: "OK",
-                            Headers: $"Content-Type: {mimeType}"
-                        );
-                        break;
+                    // NOTE: ファイル名省略された場合は index.html
+                    [.., '/'] x => System.IO.Path.Join(x, "index.html"),
+                    var x => x,
+                }).TrimStart('/'));
 
-                    // リソースが存在しない場合 : ステータスコード404
-                    default:
-                        var page404Path = System.IO.Path.Combine(RootFolder, "404.html");
+            switch (resourcePath)
+            {
+                // リソースが存在する場合 : ステータスコード200
+                case var existingResource when File.Exists(existingResource):
+                    var mimeType = FileExtensionContentTypeProvider.TryGetContentType(resourcePath, out var result) ? result : null;
                     args.Response = coreWebView2.Environment.CreateWebResourceResponse(
-                            Content: File.Exists(page404Path) ? File.OpenRead(page404Path) : null,
-                            StatusCode: StatusCodes.Status404NotFound,
-                            ReasonPhrase: "Not Found",
-                            Headers: $"Content-Type: text/html");
-                        break;
-                }
+                        Content: File.OpenRead(resourcePath),
+                        StatusCode: StatusCodes.Status200OK,
+                        ReasonPhrase: "OK",
+                        Headers: $"Content-Type: {mimeType}"
+                    );
+                    break;
+
+                // リソースが存在しない場合 : ステータスコード404
+                default:
+                    var page404Path = System.IO.Path.Combine(RootFolder, "404.html");
+                    args.Response = coreWebView2.Environment.CreateWebResourceResponse(
+                        Content: File.Exists(page404Path) ? File.OpenRead(page404Path) : null,
+                        StatusCode: StatusCodes.Status404NotFound,
+                        ReasonPhrase: "Not Found",
+                        Headers: $"Content-Type: text/html");
+                    break;
+            }
         }
     }
 }
